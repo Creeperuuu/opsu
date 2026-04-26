@@ -1,0 +1,52 @@
+name: Android
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  assemble-debug:
+    name: Assemble Debug APK
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        distribution: "temurin"
+        java-version: 17
+        
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v4
+      with:
+        packages: 'build-tools;20.0.0 platforms;android-20'
+        
+    - name: Install missing lib
+      run: sudo dpkg --add-architecture i386 && sudo apt-get update -y && sudo apt-get install -y lib32z1 -y
+        
+    - name: Set up JDK 8
+      uses: actions/setup-java@v4
+      with:
+        distribution: "temurin"
+        java-version: 8
+
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v4
+
+    - name: Assemble debug APK
+      run: ./gradlew assembleDebug -q
+
+    - name: Upload Debug
+      uses: actions/upload-artifact@v4
+      with:
+        name: Debug
+        path: |
+          **/build/outputs/
