@@ -227,7 +227,7 @@ public class DynamicFreeTypeFont {
 			maxHeight = 0;
 			curPixmap = new Pixmap(512, 512, Format.RGBA8888);
 			curTexture = new Texture(new PixmapTextureData(curPixmap, null,
-					false, false, true));
+					false, false, false));
 			pixmapList.add(curPixmap);
 			textureList.add(curTexture);
 			curPixmap.setColor(0);
