@@ -529,9 +529,8 @@ public class GameData {
 		float cx = x + ((length - 1) * (digitWidth / 2));
 
 		for (int i = 0; i < length; i++) {
-			Image digit = getDefaultSymbolImage(n % 10).getScaledCopy(scale);
-			digit.setAlpha(alpha);
-			digit.drawCentered(cx, y);
+			Image digit = getDefaultSymbolImage(n % 10);
+			digit.drawCentered(cx, y, digit.getWidth() * scale, digit.getHeight() * scale, Color.white, alpha);
 			cx -= digitWidth;
 			n /= 10;
 		}
@@ -552,22 +551,18 @@ public class GameData {
 		if (rightAlign) {
 			for (int i = c.length - 1; i >= 0; i--) {
 				Image digit = getScoreSymbolImage(c[i]);
-				if (scale != 1.0f)
-					digit = digit.getScaledCopy(scale);
-				cx -= digit.getWidth();
-				digit.setAlpha(alpha);
-				digit.draw(cx, y);
-				digit.setAlpha(1f);
+				float w = digit.getWidth() * scale;
+				float h = digit.getHeight() * scale;
+				cx -= w;
+				digit.draw(cx, y, w, h, Color.white, alpha);
 			}
 		} else {
 			for (int i = 0; i < c.length; i++) {
 				Image digit = getScoreSymbolImage(c[i]);
-				if (scale != 1.0f)
-					digit = digit.getScaledCopy(scale);
-				digit.setAlpha(alpha);
-				digit.draw(cx, y);
-				digit.setAlpha(1f);
-				cx += digit.getWidth();
+				float w = digit.getWidth() * scale;
+				float h = digit.getHeight() * scale;
+				digit.draw(cx, y, w, h, Color.white, alpha);
+				cx += w;
 			}
 		}
 	}

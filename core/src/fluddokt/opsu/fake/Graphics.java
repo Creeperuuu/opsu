@@ -33,6 +33,7 @@ public class Graphics {
 	public static final int MODE_ALPHA_BLEND = 3;
 
 	static int mode = 0;
+	private static boolean dirtyTransform = true;
 	static int width, height;
 	public static Color bgcolor = Color.black;
 	static Color fgcolor = Color.white;
@@ -164,6 +165,9 @@ public class Graphics {
 					break;
 			}
 			//begin
+			if (nmode != NONE) {
+				applyTransform();
+			}
 			switch (nmode) {
 				case SPRITE:
 					batch.begin();
@@ -349,11 +353,17 @@ public class Graphics {
 		
 	}
 	public static void updateCamera() {
+		dirtyTransform = true;
+	}
+
+	private static void applyTransform() {
+		if (!dirtyTransform) return;
 		camera.update();
 		transformcombined.set(camera.combined);
 		transformcombined.mul(transform);
 		batch.setProjectionMatrix(transformcombined);
 		shapeRender.setProjectionMatrix(transformcombined);
+		dirtyTransform = false;
 	}
 	
 	private Matrix4 getNewTranformState() {

@@ -321,8 +321,10 @@ public class Slider implements GameObject {
 
 		if (timeDiff >= 0) {
 			// approach circle
-			if (!GameMod.HIDDEN.isActive())
-				GameImage.APPROACHCIRCLE.getImage().getScaledCopy(approachScale).drawCentered(x, y, color);
+			if (!GameMod.HIDDEN.isActive()) {
+				Image img = GameImage.APPROACHCIRCLE.getImage();
+				img.drawCentered(x, y, img.getWidth() * approachScale, img.getHeight() * approachScale, color);
+			}
 		} else {
 			// Since update() might not have run before drawing during a replay, the
 			// slider time may not have been calculated, which causes NAN numbers and flicker.
@@ -354,16 +356,17 @@ public class Slider implements GameObject {
 			if (followCircleActive || !releaseExpand.isFinished()) {
 				// expanding/fading animations
 				Image fc = GameImage.SLIDER_FOLLOWCIRCLE.getImage();
+				float fcScale = 1f, fcAlpha = 1f;
 				if (!initialExpand.isFinished()) {
-					fc = fc.getScaledCopy(0.5f + 0.5f * initialExpand.getValue());
-					fc.setAlpha(initialExpand.getValue());
+					fcScale = 0.5f + 0.5f * initialExpand.getValue();
+					fcAlpha = initialExpand.getValue();
 				} else if (!releaseExpand.isFinished()) {
-					fc = fc.getScaledCopy(1f + releaseExpand.getValue());
-					fc.setAlpha(1f - releaseExpand.getValue());
+					fcScale = 1f + releaseExpand.getValue();
+					fcAlpha = 1f - releaseExpand.getValue();
 				} else if (!tickExpand.isFinished()) {
-					fc = fc.getScaledCopy(1f + tickExpand.getValue());
+					fcScale = 1f + tickExpand.getValue();
 				}
-				fc.drawCentered(c.x, c.y);
+				fc.drawCentered(c.x, c.y, fc.getWidth() * fcScale, fc.getHeight() * fcScale, Color.white, fcAlpha);
 
 				// "flashlight" mod: dim the screen
 				if (GameMod.FLASHLIGHT.isActive()) {
@@ -392,7 +395,9 @@ public class Slider implements GameObject {
 		}
 
 		float tickScale = 0.5f + 0.5f * AnimationEquation.OUT_BACK.calc(decorationsAlpha);
-		Image tick = GameImage.SLIDER_TICK.getImage().getScaledCopy(tickScale);
+		Image tick = GameImage.SLIDER_TICK.getImage();
+		float tickWidth = tick.getWidth() * tickScale;
+		float tickHeight = tick.getHeight() * tickScale;
 
 		// calculate which ticks need to be drawn (don't draw if sliderball crossed it)
 		int min = 0;
@@ -426,7 +431,7 @@ public class Slider implements GameObject {
 		Colors.WHITE_FADE.a = Math.min(curveAlpha, sliderTickAlpha);
 		for (int i = min; i < max; i++) {
 			Vec2f c = curve.pointAt(ticksT[i]);
-			tick.drawCentered(c.x, c.y, Colors.WHITE_FADE);
+			tick.drawCentered(c.x, c.y, tickWidth, tickHeight, Colors.WHITE_FADE);
 		}
 	}
 

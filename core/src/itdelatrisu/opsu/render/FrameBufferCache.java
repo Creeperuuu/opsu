@@ -40,6 +40,9 @@ public class FrameBufferCache {
 	/** */
 	private ArrayList<Rendertarget> cache;
 
+	/** Maximum number of cached framebuffers. */
+	private static final int MAX_CACHE_SIZE = 8;
+
 	/** Container dimensions. */
 	public static int width, height;
 
@@ -115,11 +118,28 @@ public class FrameBufferCache {
 			}
 		}
 
-		// no unmapped RTTFramebuffer found, create a new one
-		buffer = Rendertarget.createRTTFramebuffer(width, height);
-		//buffer = Rendertarget.createRTTFramebuffer(512, 512);
+		// no unmapped RTTFramebuffer found, create a new one if below cap
+		if (cache.size() < MAX_CACHE_SIZE) {
+			buffer = Rendertarget.createRTTFramebuffer(width, height);
+			cache.add(buffer);
+		} else {
+			// steal the first one in the cache
+			buffer = cache.get(0);
+			// remove the old mapping
+			HitObject oldKey = null;
+			for (Map.Entry<HitObject, Rendertarget> entry : cacheMap.entrySet()) {
+				if (entry.getValue() == buffer) {
+					oldKey = entry.getKey();
+					break;
+				}
+			}
+			if (oldKey != null) cacheMap.remove(oldKey);
+			
+			// Move to end of list to simulate LRU (basic)
+			cache.remove(0);
+			cache.add(buffer);
+		}
 		
-		cache.add(buffer);
 		cacheMap.put(obj, buffer);
 		return buffer;
 	}

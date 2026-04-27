@@ -252,11 +252,10 @@ public class DynamicFreeTypeFont {
 			curPixmap.drawPixmap(pixmap, x, y);
 			curPixmap.drawPixmap(pixmap, x, y);
 			Pixmap.setBlending(Blending.None);
+			curTexture.draw(curPixmap, 0, 0);
+		} else {
+			curTexture.draw(pixmap, x, y);
 		}
-		
-
-		curTexture.load(new PixmapTextureData(curPixmap, null, false, false,
-				true));
 
 		TextureRegion tr = new TextureRegion(curTexture, x, y,
 				pixMapWidth, pixmap.getHeight());

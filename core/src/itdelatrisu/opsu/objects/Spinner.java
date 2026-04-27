@@ -224,9 +224,8 @@ public class Spinner implements GameObject {
 		GameImage.SPINNER_CIRCLE.getImage().drawCentered(width / 2, height / 2);
 		if (!GameMod.HIDDEN.isActive()) {
 			float approachScale = 1 - Utils.clamp(((float) timeDiff / (hitObject.getTime() - hitObject.getEndTime())), 0f, 1f);
-			Image approachCircleScaled = GameImage.SPINNER_APPROACHCIRCLE.getImage().getScaledCopy(approachScale);
-			approachCircleScaled.setAlpha(alpha);
-			approachCircleScaled.drawCentered(width / 2, height / 2);
+			Image img = GameImage.SPINNER_APPROACHCIRCLE.getImage();
+			img.drawCentered(width / 2, height / 2, img.getWidth() * approachScale, img.getHeight() * approachScale, Color.white, alpha);
 		}
 			//>>>>>>>>>>
 		} else {

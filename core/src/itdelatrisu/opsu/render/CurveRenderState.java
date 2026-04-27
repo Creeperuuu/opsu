@@ -166,27 +166,27 @@ public class CurveRenderState {
 	 */
 	private RenderState saveRenderState() {
 		RenderState state = new RenderState();
-		//state.smoothedPoly = GL11.glGetBoolean(GL11.GL_POLYGON_SMOOTH);
-		state.blendEnabled = GL11.glGetBoolean(GL11.GL_BLEND);
-		state.depthEnabled = GL11.glGetBoolean(GL11.GL_DEPTH_TEST);
-		state.depthWriteEnabled = GL11.glGetBoolean(GL11.GL_DEPTH_WRITEMASK);
-		state.texEnabled = GL11.glGetBoolean(GL11.GL_TEXTURE_2D);
+		state.blendEnabled = true; // Assume blend is usually enabled in opsu2
+		state.depthEnabled = false; // Assume depth is usually disabled
+		state.depthWriteEnabled = false;
+		state.texEnabled = true;
+		// state.oldProgram and state.oldArrayBuffer are still needed if we don't know the state
+		// but we can often avoid them if we know we are switching from/to Graphics mode.
 		state.oldProgram = GL11.glGetInteger(GL20.GL_CURRENT_PROGRAM);
 		state.oldArrayBuffer = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
-		//GL11.glDisable(GL11.GL_POLYGON_SMOOTH);
+		
 		GL11.glEnable(GL11.GL_BLEND);
 		GL14.glBlendEquation(GL14.GL_FUNC_ADD);
 		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 		GL11.glDepthMask(true);
 		GL11.glDisable(GL11.GL_TEXTURE_2D);
-		GL11.glEnable(GL11.GL_TEXTURE_1D);
-		//GL11.glBindTexture(GL11.GL_TEXTURE_1D, staticState.gradientTexture);
+		// GL11.glEnable(GL11.GL_TEXTURE_1D); // GL_TEXTURE_1D is mapped to GL_TEXTURE_2D in opsu2
 		staticState.gradientTexture.bind();
-		GL11.glTexParameteri(GL11.GL_TEXTURE_1D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
-		GL11.glTexParameteri(GL11.GL_TEXTURE_1D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-		GL11.glTexParameteri(GL11.GL_TEXTURE_1D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_CLAMP_TO_EDGE);
-		GL11.glTexParameteri(GL11.GL_TEXTURE_1D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_CLAMP_TO_EDGE);
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_CLAMP_TO_EDGE);
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_CLAMP_TO_EDGE);
 		
 		GL20.glUseProgram(0);
 
@@ -202,16 +202,15 @@ public class CurveRenderState {
 	private void restoreRenderState(RenderState state) {
 		GL11.glEnable(GL11.GL_BLEND);
 		GL20.glUseProgram(state.oldProgram);
-		GL11.glDisable(GL11.GL_TEXTURE_1D);
+		// GL11.glDisable(GL11.GL_TEXTURE_1D);
 		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, state.oldArrayBuffer);
-		if (!state.depthWriteEnabled)
-			GL11.glDepthMask(false);
+		
+		GL11.glDepthMask(state.depthWriteEnabled);
 		if (!state.depthEnabled)
 			GL11.glDisable(GL11.GL_DEPTH_TEST);
 		if (state.texEnabled)
 			GL11.glEnable(GL11.GL_TEXTURE_2D);
-		if (state.smoothedPoly)
-			GL11.glEnable(GL11.GL_POLYGON_SMOOTH);
+		
 		if (!state.blendEnabled)
 			GL11.glDisable(GL11.GL_BLEND);
 	}
@@ -257,7 +256,6 @@ public class CurveRenderState {
 			}
 		}
 
-		int arrayBufferBinding = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
 		FloatBuffer buff = BufferUtils.createByteBuffer(4 * (4 + 2) * 3 * (triangle_count)).asFloatBuffer();
 
 		last_dx=0; last_dy=0;
@@ -456,7 +454,7 @@ public class CurveRenderState {
 		buff2.flip();
 		GL15.glBufferData(GL15.GL_ARRAY_BUFFER, buff2, GL15.GL_STATIC_DRAW);
 		
-		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, arrayBufferBinding);
+		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
 	}
 
 	/**

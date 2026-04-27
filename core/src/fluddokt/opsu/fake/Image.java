@@ -468,18 +468,37 @@ public class Image {
 		draw(x - getWidth() / 2f, y - getHeight() / 2f, color);
 	}
 
+	public void drawCentered(float x, float y, float w, float h, Color color) {
+		draw(x - w / 2f, y - h / 2f, w, h, color);
+	}
+
+	public void drawCentered(float x, float y, float w, float h, Color color, float drawAlpha) {
+		Graphics.getGraphics().setColorAlpha(color, alpha * drawAlpha);
+		Graphics.getGraphics().drawTexture(getTextureRegion(), x - w / 2f, y - h / 2f,
+				w, h, rotation);
+	}
+
+	public void drawCentered(float x, float y, float scale, Color color) {
+		drawCentered(x, y, width * scale, height * scale, color);
+	}
+
 	public void draw(float x, float y, float w, float h) {
 		Graphics.getGraphics().setColorAlpha(Color.white, alpha);
 		Graphics.getGraphics().drawTexture(getTextureRegion(), x, y,
 				w, h, rotation);
 	}
-	public void draw(float x, float y, float w,
-			float h, Color color) {
+	public void draw(float x, float y, float w, float h, Color color) {
 		Graphics.getGraphics().setColorAlpha(color, alpha);
 		Graphics.getGraphics().drawTexture(getTextureRegion(), x, y,
 				w, h, rotation);
 	}
-	
+
+	public void draw(float x, float y, float w, float h, Color color, float drawAlpha) {
+		Graphics.getGraphics().setColorAlpha(color, alpha * drawAlpha);
+		Graphics.getGraphics().drawTexture(getTextureRegion(), x, y,
+				w, h, rotation);
+	}
+
 	public void drawCentered(float x, float y) {
 		drawCentered(x, y, Color.white);
 	}

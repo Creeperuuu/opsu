@@ -174,13 +174,7 @@ public class Rendertarget {
 	 * to use this rendertarget with OpenGL after calling this method.
 	 */
 	public void destroyRTT() {
-		/*
-		EXTFramebufferObject.glDeleteFramebuffersEXT(fboID);
-		EXTFramebufferObject.glDeleteRenderbuffersEXT(depthBufferID);
-		GL11.glDeleteTextures(textureID);
 		GL15.glDeleteBuffers(vboID);
-		
-		*/
 		fbo.dispose();
 	}
 }

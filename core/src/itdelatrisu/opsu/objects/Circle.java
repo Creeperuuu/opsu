@@ -113,8 +113,10 @@ public class Circle implements GameObject {
 		float oldAlpha = Colors.WHITE_FADE.a;
 		Colors.WHITE_FADE.a = color.a = alpha;
 
-		if (timeDiff >= 0 && !GameMod.HIDDEN.isActive())
-			GameImage.APPROACHCIRCLE.getImage().getScaledCopy(approachScale).drawCentered(x, y, color);
+		if (timeDiff >= 0 && !GameMod.HIDDEN.isActive()) {
+			Image img = GameImage.APPROACHCIRCLE.getImage();
+			img.drawCentered(x, y, img.getWidth() * approachScale, img.getHeight() * approachScale, color);
+		}
 		GameImage.HITCIRCLE.getImage().drawCentered(x, y, color);
 		boolean overlayAboveNumber = Options.getSkin().isHitCircleOverlayAboveNumber();
 		if (!overlayAboveNumber)

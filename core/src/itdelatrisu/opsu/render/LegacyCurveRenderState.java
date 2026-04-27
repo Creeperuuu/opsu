@@ -186,20 +186,6 @@ public class LegacyCurveRenderState {
 			initFBO();
 
 		if (lastPointDrawn != to || firstPointDrawn != from) {
-			/*
-			int oldFb = GL11.glGetInteger(EXTFramebufferObject.GL_FRAMEBUFFER_BINDING_EXT);
-			*/
-			int oldFb = GL11.glGetInteger(GL30.GL_FRAMEBUFFER_BINDING);
-			int oldTex = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
-			
-			//glGetInteger requires a buffer of size 16, even though just 4
-			//values are returned in this specific case
-			/*
-			IntBuffer oldViewport = BufferUtils.createIntBuffer(16);
-			GL11.glGetInteger(GL11.GL_VIEWPORT, oldViewport);
-			EXTFramebufferObject.glBindFramebufferEXT(EXTFramebufferObject.GL_FRAMEBUFFER_EXT, fbo.getID());
-			GL11.glViewport(0, 0, fbo.width, fbo.height);
-			*/
 			fbo.bind();
 			GL11.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 			GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
@@ -210,12 +196,8 @@ public class LegacyCurveRenderState {
 			
 			fbo.unbind();
 			
-			GL11.glBindTexture(GL11.GL_TEXTURE_2D, oldTex);
-			/*
-			EXTFramebufferObject.glBindFramebufferEXT(EXTFramebufferObject.GL_FRAMEBUFFER_EXT, oldFb);
-			GL11.glViewport(oldViewport.get(0), oldViewport.get(1), oldViewport.get(2), oldViewport.get(3));
-			*/
-			GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, oldFb);
+			GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0);
+			GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, 0);
 		}
 
 		/*
@@ -270,12 +252,11 @@ public class LegacyCurveRenderState {
 	 */
 	private RenderState saveRenderState() {
 		RenderState state = new RenderState();
-		state.smoothedPoly = GL11.glGetBoolean(GL11.GL_POLYGON_SMOOTH);
-		state.blendEnabled = GL11.glGetBoolean(GL11.GL_BLEND);
-		state.depthEnabled = GL11.glGetBoolean(GL11.GL_DEPTH_TEST);
-		state.depthWriteEnabled = GL11.glGetBoolean(GL11.GL_DEPTH_WRITEMASK);
-		state.texEnabled = GL11.glGetBoolean(GL11.GL_TEXTURE_2D);
-		state.texUnit = GL11.glGetInteger(GL13.GL_ACTIVE_TEXTURE);
+		state.blendEnabled = true;
+		state.depthEnabled = false;
+		state.depthWriteEnabled = false;
+		state.texEnabled = true;
+		state.texUnit = GL13.GL_TEXTURE0;
 		state.oldProgram = GL11.glGetInteger(GL20.GL_CURRENT_PROGRAM);
 		state.oldArrayBuffer = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
 		GL11.glDisable(GL11.GL_POLYGON_SMOOTH);
@@ -283,22 +264,12 @@ public class LegacyCurveRenderState {
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 		GL11.glDepthMask(true);
 		GL11.glDisable(GL11.GL_TEXTURE_2D);
-		GL11.glEnable(GL11.GL_TEXTURE_1D);
-		//GL11.glBindTexture(GL11.GL_TEXTURE_1D, staticState.gradientTexture);
+		// GL11.glEnable(GL11.GL_TEXTURE_1D);
 		staticState.gradientTexture.bind();
-		GL11.glTexParameteri(GL11.GL_TEXTURE_1D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
-		GL11.glTexParameteri(GL11.GL_TEXTURE_1D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-	//	GL11.glTexParameteri(GL11.GL_TEXTURE_1D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_CLAMP);
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
 
 		GL20.glUseProgram(0);
-/*
-		GL11.glMatrixMode(GL11.GL_PROJECTION);
-		GL11.glPushMatrix();
-		GL11.glLoadIdentity();
-		GL11.glMatrixMode(GL11.GL_MODELVIEW);
-		GL11.glPushMatrix();
-		GL11.glLoadIdentity();
-*/
 		return state;
 	}
 
@@ -307,18 +278,11 @@ public class LegacyCurveRenderState {
 	 * @param state the old state to restore
 	 */
 	private void restoreRenderState(RenderState state) {
-		/*
-		GL11.glMatrixMode(GL11.GL_PROJECTION);
-		GL11.glPopMatrix();
-		GL11.glMatrixMode(GL11.GL_MODELVIEW);
-		GL11.glPopMatrix();
-		*/
 		GL11.glEnable(GL11.GL_BLEND);
 		GL20.glUseProgram(state.oldProgram);
 		GL13.glActiveTexture(state.texUnit);
 		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, state.oldArrayBuffer);
-		if (!state.depthWriteEnabled)
-			GL11.glDepthMask(false);
+		GL11.glDepthMask(state.depthWriteEnabled);
 		if (!state.depthEnabled)
 			GL11.glDisable(GL11.GL_DEPTH_TEST);
 		if (state.texEnabled)
@@ -335,7 +299,6 @@ public class LegacyCurveRenderState {
 	 * @param bufferID the buffer ID for the OpenGL buffer the vertices should be written into
 	 */
 	private void createVertexBuffer(int bufferID) {
-		int arrayBufferBinding = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
 		FloatBuffer buff = BufferUtils.createByteBuffer(4 * (4 + 2) * (2 * curve.length - 1) * (NewCurveStyleState.DIVIDES + 2)).asFloatBuffer();
 		if (curve.length > 0)
 			fillCone(buff, curve[0].x, curve[0].y);
@@ -361,7 +324,7 @@ public class LegacyCurveRenderState {
 		buff.flip();
 		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, bufferID);
 		GL15.glBufferData(GL15.GL_ARRAY_BUFFER, buff, GL15.GL_STATIC_DRAW);
-		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, arrayBufferBinding);
+		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
 	}
 
 	/**
