@@ -177,9 +177,13 @@ public class DynamicFreeTypeFont {
 			for (int y = 0; y < pixmap.getHeight(); y++) {
 				for (int x = 0; x < pixmap.getWidth(); x++) {
 					byte curbyte = rbuf.get();
-					wbuf.putInt((curbyte & 0xff) | 0xffffff00);
+					wbuf.put((byte) 0xff);
+					wbuf.put((byte) 0xff);
+					wbuf.put((byte) 0xff);
+					wbuf.put(curbyte);
 				}
-			}// */
+			}
+// */
 
 		} else if (bitmap.getPixelMode() == FreeType.FT_PIXEL_MODE_MONO) {
 			pixmap = new Pixmap(bitmap.getWidth(), bitmap.getRows(),

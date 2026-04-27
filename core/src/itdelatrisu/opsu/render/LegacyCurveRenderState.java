@@ -463,7 +463,7 @@ public class LegacyCurveRenderState {
 				Gdx2DPixmap g2dpix = new Gdx2DPixmap(slider.getWidth(), 1, Gdx2DPixmap.GDX2D_FORMAT_RGBA8888);
 				for (int i = 0; i < slider.getWidth(); ++i) {
 					Color col = slider.getColor(i, 0);
-					g2dpix.setPixel(i, 0, col.getRed()<<24 | col.getGreen()<<16 | col.getBlue()<<8 | col.getAlpha());
+					g2dpix.setPixel(i, 0, (col.getRed() << 24) | (col.getGreen() << 16) | (col.getBlue() << 8) | col.getAlpha());
 				}
 
 				gradientTexture = new Texture(
@@ -472,7 +472,7 @@ public class LegacyCurveRenderState {
 						, Format.RGBA8888, 
 						/*useMipMaps*/true, 
 						/*disposePixmap*/false, 
-						/*managed*/true
+						/*managed*/false
 					)
 					
 				);
