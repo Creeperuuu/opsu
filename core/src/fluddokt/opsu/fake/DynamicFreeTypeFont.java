@@ -153,140 +153,113 @@ public class DynamicFreeTypeFont {
 			tparam = backParam;
 		}
 		FreeType.loadChar(tface, c,
-		// FreeType.FT_LOAD_RENDER
-		// FreeType.FT_LOAD_DEFAULT
 				fontParam.size < 16 ? FreeType.FT_LOAD_DEFAULT : 
 							FreeType.FT_LOAD_NO_HINTING
 							|FreeType.FT_LOAD_NO_BITMAP
-		// FreeType.FT_LOAD_NO_AUTOHINT
-		);// FT_LOAD_MONOCHROME FT_RENDER_MODE_LIGHT
+		);
 		GlyphSlot slot = tface.getGlyph();
 		FreeType.renderGlyph(slot, FreeType.FT_RENDER_MODE_LIGHT);
 		Bitmap bitmap = slot.getBitmap();
 
-		// System.out.println("Pixel Mode "+bitmap.getPixelMode());
-		Pixmap pixmap;
-		if (bitmap.getPixelMode() == FreeType.FT_PIXEL_MODE_GRAY) {
-			// pixmap = bitmap.getPixmap(Format.RGBA8888);
-			// *
-			pixmap = new Pixmap(bitmap.getWidth(), bitmap.getRows(),
-					Format.RGBA8888);
-			java.nio.ByteBuffer rbuf = bitmap.getBuffer();
-			java.nio.ByteBuffer wbuf = pixmap.getPixels();
+		int pw = bitmap.getWidth();
+		int ph = bitmap.getRows();
 
-			for (int y = 0; y < pixmap.getHeight(); y++) {
-				for (int x = 0; x < pixmap.getWidth(); x++) {
-					byte curbyte = rbuf.get();
-					wbuf.put((byte) 0xff);
-					wbuf.put((byte) 0xff);
-					wbuf.put((byte) 0xff);
-					wbuf.put(curbyte);
-				}
-			}
-// */
-
-		} else if (bitmap.getPixelMode() == FreeType.FT_PIXEL_MODE_MONO) {
-			pixmap = new Pixmap(bitmap.getWidth(), bitmap.getRows(),
-					Format.RGBA8888);
-			java.nio.ByteBuffer rbuf = bitmap.getBuffer();
-			java.nio.ByteBuffer wbuf = pixmap.getPixels();
-
-			byte curbyte = rbuf.get();
-			int bitAt = 0;
-			for (int y = 0; y < pixmap.getHeight(); y++) {
-				for (int x = 0; x < pixmap.getWidth(); x++) {
-					if (((curbyte >> (7 - bitAt)) & 1) > 0) {
-						wbuf.putInt(0xffffffff);
-					} else {
-						wbuf.putInt(0x00000000);
-					}
-					bitAt++;
-					if (bitAt >= 8) {
-						bitAt = 0;
-						if (rbuf.hasRemaining())
-							curbyte = rbuf.get();
-					}
-				}
-				if (bitAt > 0) {
-					bitAt = 0;
-					if (rbuf.hasRemaining())
-						curbyte = rbuf.get();
-				}
-			}
-		} else {
-			throw new GdxRuntimeException("Unknown Freetype pixel mode :"
-					+ bitmap.getPixelMode());
-		}
-		
-		int pixMapWidth = pixmap.getWidth();
-		if((fontParam.style&Font.BOLD) > 0){
-		//	pixMapWidth+=1;
-		}
-		
-		
 		// create a new page
-		if (curPixmap == null || y + pixmap.getHeight() > curPixmap.getHeight()) {
+		if (curPixmap == null || (x + pw + PAD > curPixmap.getWidth() && y + maxHeight + PAD + ph > curPixmap.getHeight())) {
 			x = 0;
 			y = 0;
 			maxHeight = 0;
 			curPixmap = new Pixmap(512, 512, Format.RGBA8888);
 			curTexture = new Texture(new PixmapTextureData(curPixmap, null,
-					false, false, false));
+					false, false, true));
 			pixmapList.add(curPixmap);
 			textureList.add(curTexture);
 			curPixmap.setColor(0);
 			curPixmap.fill();
 		}
-		
+
 		// cant fit width, go to next line
-		if (x + pixMapWidth > curPixmap.getWidth()) {
+		if (x + pw + PAD > curPixmap.getWidth()) {
 			x = 0;
 			y += maxHeight + PAD;
 			maxHeight = 0;
 		}
 		// find the max Height of the this line
-		if (pixmap.getHeight() > maxHeight) {
-			maxHeight = pixmap.getHeight();
+		if (ph > maxHeight) {
+			maxHeight = ph;
 		}
+		
+		if (pw > 0 && ph > 0) {
+			Pixmap pixmap;
+			if (bitmap.getPixelMode() == FreeType.FT_PIXEL_MODE_GRAY) {
+				pixmap = new Pixmap(pw, ph, Format.RGBA8888);
+				java.nio.ByteBuffer rbuf = bitmap.getBuffer();
+				java.nio.ByteBuffer wbuf = pixmap.getPixels();
+				int pitch = bitmap.getPitch();
 
-		Pixmap.setBlending(Blending.None);
-		curPixmap.drawPixmap(pixmap, x, y);
-		if((tparam.style&Font.BOLD) > 0){
-			Pixmap.setBlending(Blending.SourceOver);
-			curPixmap.drawPixmap(pixmap, x, y);
-			curPixmap.drawPixmap(pixmap, x, y);
+				for (int i = 0; i < ph; i++) {
+					int lineStart = i * pitch;
+					for (int j = 0; j < pw; j++) {
+						byte curbyte = rbuf.get(lineStart + j);
+						wbuf.put((byte) 0xff);
+						wbuf.put((byte) 0xff);
+						wbuf.put((byte) 0xff);
+						wbuf.put(curbyte);
+					}
+				}
+			} else if (bitmap.getPixelMode() == FreeType.FT_PIXEL_MODE_MONO) {
+				pixmap = new Pixmap(pw, ph, Format.RGBA8888);
+				java.nio.ByteBuffer rbuf = bitmap.getBuffer();
+				java.nio.ByteBuffer wbuf = pixmap.getPixels();
+				int pitch = bitmap.getPitch();
+
+				for (int i = 0; i < ph; i++) {
+					int lineStart = i * pitch;
+					for (int j = 0; j < pw; j++) {
+						byte curbyte = rbuf.get(lineStart + (j >> 3));
+						if (((curbyte >> (7 - (j & 7))) & 1) > 0) {
+							wbuf.putInt(0xffffffff);
+						} else {
+							wbuf.putInt(0x00000000);
+						}
+					}
+				}
+			} else {
+				throw new GdxRuntimeException("Unknown Freetype pixel mode :"
+						+ bitmap.getPixelMode());
+			}
+
 			Pixmap.setBlending(Blending.None);
-			curTexture.draw(curPixmap, 0, 0);
-		} else {
-			curTexture.draw(pixmap, x, y);
+			curPixmap.drawPixmap(pixmap, x, y);
+			if ((tparam.style & Font.BOLD) > 0) {
+				Pixmap.setBlending(Blending.SourceOver);
+				curPixmap.drawPixmap(pixmap, x, y);
+				curPixmap.drawPixmap(pixmap, x, y);
+				Pixmap.setBlending(Blending.None);
+				curTexture.draw(curPixmap, 0, 0);
+			} else {
+				curTexture.draw(pixmap, x, y);
+			}
+			pixmap.dispose();
 		}
 
-		TextureRegion tr = new TextureRegion(curTexture, x, y,
-				pixMapWidth, pixmap.getHeight());
+		TextureRegion tr = new TextureRegion(curTexture, x, y, pw, ph);
 		tr.flip(false, true);
-		x += pixMapWidth + PAD;
+		x += pw + PAD;
 
 		GlyphMetrics metrics = slot.getMetrics();
 		CharInfo ci = new CharInfo();
 		ci.region = tr;
-		ci.horadvance = to26p6float(metrics.getHoriAdvance());// slot.getLinearHoriAdvance()>>16;
+		ci.horadvance = to26p6float(metrics.getHoriAdvance());
 		ci.xbear = to26p6float(metrics.getHoriBearingX());
 		ci.ybear = to26p6float(metrics.getHoriBearingY());
 		ci.height = to26p6float(metrics.getHeight());
 		ci.sBitmapTop = slot.getBitmapTop();
 		ci.sBitmapLeft = slot.getBitmapLeft();
-		ci.yoffset = slot.getBitmapTop() - pixmap.getHeight();
+		ci.yoffset = slot.getBitmapTop() - ph;
 		ci.bitmapPitch = bitmap.getPitch();
-		ci.bitmapRows = bitmap.getRows();
-		ci.bitmapWidth = bitmap.getWidth();
-		
-		/*
-		System.out.println("char: "+c+"hradv:"+ci.horadvance+" xbear:"+ci.xbear+" ybear"+ci.ybear+" height"+ci.height+
-				" sBitmapTop"+ci.sBitmapTop+ " sBitmapLeft"+ci.sBitmapLeft
-				+" bitmapPitch"+ci.bitmapPitch+" bitmapRows"+ci.bitmapRows+" bitmapWidth"+ci.bitmapWidth
-				);*/
-		pixmap.dispose();
-		
+		ci.bitmapRows = ph;
+		ci.bitmapWidth = pw;
 		 
 		return ci;
 	}
