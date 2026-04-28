@@ -17,12 +17,30 @@ import com.badlogic.gdx.graphics.g2d.freetype.FreeType.GlyphSlot;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeType.Library;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeType.SizeMetrics;
 import com.badlogic.gdx.graphics.glutils.PixmapTextureData;
+import com.badlogic.gdx.graphics.TextureData;
 import com.badlogic.gdx.utils.GdxRuntimeException;
 import com.badlogic.gdx.utils.IntFloatMap;
 import com.badlogic.gdx.utils.IntMap;
 
 public class DynamicFreeTypeFont {
 	static int PAD = 1;
+	
+	private static class UnmanagedTextureData implements TextureData {
+		Pixmap pixmap;
+		public UnmanagedTextureData(Pixmap pixmap) { this.pixmap = pixmap; }
+		@Override public TextureDataType getType() { return TextureDataType.Pixmap; }
+		@Override public boolean isPrepared() { return true; }
+		@Override public void prepare() {}
+		@Override public Pixmap consumePixmap() { return pixmap; }
+		@Override public boolean disposePixmap() { return false; }
+		@Override public void consumeCustomData(int target) {}
+		@Override public int getWidth() { return pixmap.getWidth(); }
+		@Override public int getHeight() { return pixmap.getHeight(); }
+		@Override public Format getFormat() { return pixmap.getFormat(); }
+		@Override public boolean useMipMaps() { return false; }
+		@Override public boolean isManaged() { return false; }
+	}
+	
 	FileHandle handle;
 	Face face;
 	Face backupface;
@@ -170,8 +188,7 @@ public class DynamicFreeTypeFont {
 			y = 0;
 			maxHeight = 0;
 			curPixmap = new Pixmap(512, 512, Format.RGBA8888);
-			curTexture = new Texture(new PixmapTextureData(curPixmap, null,
-					false, false, true));
+			curTexture = new Texture(new UnmanagedTextureData(curPixmap));
 			pixmapList.add(curPixmap);
 			textureList.add(curTexture);
 			curPixmap.setColor(0);
